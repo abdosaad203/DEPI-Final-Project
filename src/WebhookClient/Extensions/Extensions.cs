@@ -27,6 +27,7 @@ public static class Extensions
         var services = builder.Services;
 
         var identityUrl = configuration.GetRequiredValue("IdentityUrl");
+        var identityMetadataAddress = configuration["IdentityMetadataAddress"];
         var callBackUrl = configuration.GetRequiredValue("CallBackUrl");
         var sessionCookieLifetime = configuration.GetValue("SessionCookieLifetimeMinutes", 60);
 
@@ -49,6 +50,11 @@ public static class Extensions
         {
             options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.Authority = identityUrl.ToString();
+            if (!string.IsNullOrWhiteSpace(identityMetadataAddress))
+            {
+                options.MetadataAddress = identityMetadataAddress;
+            }
+
             options.SignedOutRedirectUri = callBackUrl.ToString();
             options.ClientId = "webhooksclient";
             options.ClientSecret = "secret";

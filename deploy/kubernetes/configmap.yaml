@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eshop-config
+  namespace: eshop
+data:
+  # Replace with your Ingress hostnames before deploying to EKS.
+  PUBLIC_IDENTITY_URL: "https://identity.eshop.example.com"
+  PUBLIC_WEBAPP_URL: "https://shop.eshop.example.com"
+  PUBLIC_WEBHOOKS_CLIENT_URL: "https://webhooks.eshop.example.com"
+  WEBAPP_CALLBACK_URL: "https://shop.eshop.example.com/signin-oidc"
+  WEBHOOKS_CALLBACK_URL: "https://webhooks.eshop.example.com/signin-oidc"
+
+  POSTGRES_HOST: "postgres"
+  POSTGRES_USER: "postgres"
+  REDIS_HOST: "redis:6379"
+  RABBITMQ_HOST: "rabbitmq"
+
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ENABLE_HEALTH_CHECKS: "true"
+  DisableHttpsRedirection: "true"
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+
+  ConnectionStrings__eventbus: "amqp://guest:CHANGE_ME@rabbitmq:5672"
+  ConnectionStrings__EventBus: "amqp://guest:CHANGE_ME@rabbitmq:5672"
+  ConnectionStrings__redis: "redis:6379"
+
+  ServiceUrls__basket-api: "http://basket-api:8080"
+  ServiceUrls__catalog-api: "http://catalog-api:8080"
+  ServiceUrls__ordering-api: "http://ordering-api:8080"
+  ServiceUrls__catalog-api-forwarder: "http://catalog-api:8080"
+
+  Identity__Audience__basket: "basket"
+  Identity__Audience__orders: "orders"
+  Identity__Audience__webhooks: "webhooks"

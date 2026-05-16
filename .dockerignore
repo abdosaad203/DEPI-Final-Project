@@ -1,0 +1,16 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/artifacts
+**/.cursor
+**/node_modules
+**/playwright-report
+**/test-results
+**/*.user
+**/*.suo
+LICENSE
+*.md
+!deploy/**/*.md
+!docker/**/*.md

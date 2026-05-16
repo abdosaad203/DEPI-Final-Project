@@ -17,7 +17,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 
 builder.Services.AddIdentityServer(options =>
 {
-    //options.IssuerUri = "null";
+    var issuerUri = builder.Configuration["IssuerUri"];
+    if (!string.IsNullOrWhiteSpace(issuerUri))
+    {
+        options.IssuerUri = issuerUri;
+    }
+
     options.Authentication.CookieLifetime = TimeSpan.FromHours(2);
 
     options.Events.RaiseErrorEvents = true;

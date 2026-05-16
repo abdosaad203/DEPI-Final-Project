@@ -28,16 +28,43 @@ public static class Extensions
         builder.AddAIServices();
 
         // HTTP and GRPC client registrations
-        builder.Services.AddGrpcClient<Basket.BasketClient>(o => o.Address = new("http://basket-api"))
+        var configuration = builder.Configuration;
+
+        builder.Services.AddGrpcClient<Basket.BasketClient>(o =>
+                o.Address = GetServiceAddress(configuration, "basket-api"))
             .AddAuthToken();
 
-        builder.Services.AddHttpClient<CatalogService>(o => o.BaseAddress = new("https+http://catalog-api"))
+        builder.Services.AddHttpClient<CatalogService>(o =>
+                o.BaseAddress = GetServiceAddress(configuration, "catalog-api"))
             .AddApiVersion(2.0)
             .AddAuthToken();
 
-        builder.Services.AddHttpClient<OrderingService>(o => o.BaseAddress = new("https+http://ordering-api"))
+        builder.Services.AddHttpClient<OrderingService>(o =>
+                o.BaseAddress = GetServiceAddress(configuration, "ordering-api"))
             .AddApiVersion(1.0)
             .AddAuthToken();
+    }
+
+    private static Uri GetServiceAddress(IConfiguration configuration, string serviceName)
+    {
+        var configured = configuration[$"ServiceUrls:{serviceName}"];
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return new Uri(configured);
+        }
+
+        // Docker/K8s: APIs listen on HTTP :8080, not Aspire's https+http service discovery.
+        if (string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return new Uri($"http://{serviceName}:8080");
+        }
+
+        return serviceName switch
+        {
+            "catalog-api" => new Uri("https+http://catalog-api"),
+            "ordering-api" => new Uri("https+http://ordering-api"),
+            _ => new Uri($"http://{serviceName}")
+        };
     }
 
     public static void AddEventBusSubscriptions(this IEventBusBuilder eventBus)
@@ -58,6 +85,7 @@ public static class Extensions
         JsonWebTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
         var identityUrl = configuration.GetRequiredValue("IdentityUrl");
+        var identityMetadataAddress = configuration["IdentityMetadataAddress"];
         var callBackUrl = configuration.GetRequiredValue("CallBackUrl");
         var sessionCookieLifetime = configuration.GetValue("SessionCookieLifetimeMinutes", 60);
 
@@ -73,6 +101,11 @@ public static class Extensions
         {
             options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.Authority = identityUrl;
+            if (!string.IsNullOrWhiteSpace(identityMetadataAddress))
+            {
+                options.MetadataAddress = identityMetadataAddress;
+            }
+
             options.SignedOutRedirectUri = callBackUrl;
             options.ClientId = "webapp";
             options.ClientSecret = "secret";

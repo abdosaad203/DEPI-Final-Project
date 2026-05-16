@@ -38,6 +38,12 @@ public static class AuthenticationExtensions
             options.Authority = identityUrl;
             options.RequireHttpsMetadata = false;
             options.Audience = audience;
+
+            var metadataAddress = identitySection["MetadataAddress"];
+            if (!string.IsNullOrWhiteSpace(metadataAddress))
+            {
+                options.MetadataAddress = metadataAddress;
+            }
             
 #if DEBUG
             //Needed if using Android Emulator Locally. See https://learn.microsoft.com/en-us/dotnet/maui/data-cloud/local-web-services?view=net-maui-8.0#android

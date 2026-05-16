@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: eshop
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - infrastructure/postgres.yaml
+  - infrastructure/redis.yaml
+  - infrastructure/rabbitmq.yaml
+  - apps/apis.yaml
+  - apps/frontends.yaml
+  - ingress.yaml
+
+# Point images to your ECR registry after building and pushing:
+# images:
+#   - name: eshop/identity-api
+#     newName: 123456789012.dkr.ecr.us-east-1.amazonaws.com/eshop/identity-api
+#     newTag: latest
+#   - name: eshop/basket-api
+#     newName: 123456789012.dkr.ecr.us-east-1.amazonaws.com/eshop/basket-api
+#     newTag: latest
+#   ... repeat for each service

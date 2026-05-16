@@ -23,12 +23,19 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAntiforgery();
 
-app.UseHttpsRedirection();
+if (!app.Configuration.GetValue("DisableHttpsRedirection", false))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
-app.MapForwarder("/product-images/{id}", "https+http://catalog-api", "/api/catalog/items/{id}/pic");
+var catalogForwarder = app.Configuration["ServiceUrls:catalog-api-forwarder"]
+    ?? (string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)
+        ? "http://catalog-api:8080"
+        : "https+http://catalog-api");
+app.MapForwarder("/product-images/{id}", catalogForwarder, "/api/catalog/items/{id}/pic");
 
 app.Run();
