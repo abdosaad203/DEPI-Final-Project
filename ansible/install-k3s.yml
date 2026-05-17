@@ -1,0 +1,23 @@
+---
+- hosts: web
+  become: true
+
+  tasks:
+
+    - name: Install k3s
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_SELINUX_RPM=true sh -
+
+    - name: Wait for k3s service
+      systemd:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Check node status
+      shell: sudo k3s kubectl get nodes
+      register: k3s_nodes
+
+    - name: Show nodes
+      debug:
+        var: k3s_nodes.stdout
