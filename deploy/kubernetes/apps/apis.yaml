@@ -113,7 +113,7 @@ spec:
     spec:
       containers:
         - name: basket-api
-          image: eshop/basket-api:latest
+          image: abdosaad0/basket-api:latest
 
           resources:
             requests:
