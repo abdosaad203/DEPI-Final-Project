@@ -4,7 +4,7 @@ metadata:
   name: webapp
   namespace: eshop
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: webapp
@@ -16,28 +16,42 @@ spec:
       containers:
         - name: webapp
           image: eshop/webapp:latest
+
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: eshop-config
+
           env:
             - name: IdentityUrl
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_IDENTITY_URL
+
             - name: CallBackUrl
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: WEBAPP_CALLBACK_URL
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+
 ---
 apiVersion: v1
 kind: Service
@@ -50,6 +64,7 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -69,28 +84,42 @@ spec:
       containers:
         - name: webhooksclient
           image: eshop/webhooksclient:latest
+
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: eshop-config
+
           env:
             - name: IdentityUrl
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_IDENTITY_URL
+
             - name: CallBackUrl
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: WEBHOOKS_CALLBACK_URL
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+
 ---
 apiVersion: v1
 kind: Service
