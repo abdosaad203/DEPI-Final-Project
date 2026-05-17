@@ -21,8 +21,8 @@ data:
   DisableHttpsRedirection: "true"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
 
-  ConnectionStrings__eventbus: "amqp://guest:CHANGE_ME@rabbitmq:5672"
-  ConnectionStrings__EventBus: "amqp://guest:CHANGE_ME@rabbitmq:5672"
+  ConnectionStrings__eventbus: "amqp://guest:guest@rabbitmq:5672"
+  ConnectionStrings__EventBus: "amqp://guest:guest@rabbitmq:5672"
   ConnectionStrings__redis: "redis:6379"
 
   ServiceUrls__basket-api: "http://basket-api:8080"
@@ -33,3 +33,7 @@ data:
   Identity__Audience__basket: "basket"
   Identity__Audience__orders: "orders"
   Identity__Audience__webhooks: "webhooks"
+  Identity__Scopes__catalog: "Catalog API"
+  Identity__Scopes__basket: "Basket API"
+  Identity__Scopes__ordering: "Ordering API"
+  Identity__Scopes__webhooks: "Webhooks API"
