@@ -1,4 +1,5 @@
 # Application workloads. Set image registry via kustomization images or deploy/kubernetes/kustomization.yaml.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,50 +18,70 @@ spec:
       containers:
         - name: identity-api
           image: eshop/identity-api:latest
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: eshop-config
+
           env:
             - name: ConnectionStrings__identitydb
               valueFrom:
                 secretKeyRef:
                   name: eshop-secrets
                   key: identitydb
+
             - name: IssuerUri
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_IDENTITY_URL
+
             - name: WebAppClient
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_WEBAPP_URL
+
             - name: WebhooksWebClient
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_WEBHOOKS_CLIENT_URL
+
             - name: BasketApiClient
               value: "http://basket-api:8080"
+
             - name: OrderingApiClient
               value: "http://ordering-api:8080"
+
             - name: WebhooksApiClient
               value: "http://webhooks-api:8080"
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+
           livenessProbe:
             httpGet:
               path: /alive
               port: 8080
             initialDelaySeconds: 60
             periodSeconds: 15
+
 ---
 apiVersion: v1
 kind: Service
@@ -73,6 +94,7 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -92,27 +114,42 @@ spec:
       containers:
         - name: basket-api
           image: eshop/basket-api:latest
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: eshop-config
+
           env:
             - name: Identity__Url
               valueFrom:
                 configMapKeyRef:
                   name: eshop-config
                   key: PUBLIC_IDENTITY_URL
+
             - name: Identity__Audience
               value: basket
+
             - name: Kestrel__EndpointDefaults__Protocols
               value: Http1AndHttp2
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+
 ---
 apiVersion: v1
 kind: Service
@@ -125,6 +162,7 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -144,23 +182,36 @@ spec:
       containers:
         - name: catalog-api
           image: abdosaad0/catalog-api:latest
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: eshop-config
+
           env:
             - name: ConnectionStrings__catalogdb
               valueFrom:
                 secretKeyRef:
                   name: eshop-secrets
                   key: catalogdb
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
             initialDelaySeconds: 45
             periodSeconds: 10
+
 ---
 apiVersion: v1
 kind: Service
@@ -173,163 +224,3 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ordering-api
-  namespace: eshop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: ordering-api
-  template:
-    metadata:
-      labels:
-        app: ordering-api
-    spec:
-      containers:
-        - name: ordering-api
-          image: eshop/ordering-api:latest
-          ports:
-            - containerPort: 8080
-          envFrom:
-            - configMapRef:
-                name: eshop-config
-          env:
-            - name: ConnectionStrings__orderingdb
-              valueFrom:
-                secretKeyRef:
-                  name: eshop-secrets
-                  key: orderingdb
-            - name: Identity__Url
-              valueFrom:
-                configMapKeyRef:
-                  name: eshop-config
-                  key: PUBLIC_IDENTITY_URL
-            - name: Identity__Audience
-              value: orders
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 45
-            periodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ordering-api
-  namespace: eshop
-spec:
-  selector:
-    app: ordering-api
-  ports:
-    - port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: webhooks-api
-  namespace: eshop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: webhooks-api
-  template:
-    metadata:
-      labels:
-        app: webhooks-api
-    spec:
-      containers:
-        - name: webhooks-api
-          image: eshop/webhooks-api:latest
-          ports:
-            - containerPort: 8080
-          envFrom:
-            - configMapRef:
-                name: eshop-config
-          env:
-            - name: ConnectionStrings__webhooksdb
-              valueFrom:
-                secretKeyRef:
-                  name: eshop-secrets
-                  key: webhooksdb
-            - name: Identity__Url
-              valueFrom:
-                configMapKeyRef:
-                  name: eshop-config
-                  key: PUBLIC_IDENTITY_URL
-            - name: Identity__Audience
-              value: webhooks
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webhooks-api
-  namespace: eshop
-spec:
-  selector:
-    app: webhooks-api
-  ports:
-    - port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order-processor
-  namespace: eshop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: order-processor
-  template:
-    metadata:
-      labels:
-        app: order-processor
-    spec:
-      containers:
-        - name: order-processor
-          image: eshop/order-processor:latest
-          envFrom:
-            - configMapRef:
-                name: eshop-config
-          env:
-            - name: ConnectionStrings__orderingdb
-              valueFrom:
-                secretKeyRef:
-                  name: eshop-secrets
-                  key: orderingdb
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: payment-processor
-  namespace: eshop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: payment-processor
-  template:
-    metadata:
-      labels:
-        app: payment-processor
-    spec:
-      containers:
-        - name: payment-processor
-          image: eshop/payment-processor:latest
-          envFrom:
-            - configMapRef:
-                name: eshop-config
