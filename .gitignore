@@ -491,3 +491,22 @@ $RECYCLE.BIN/
 /playwright/.auth/
 /user.json
 .azure
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Kubernetes secrets
+secret.yaml
+
+# Environment files
+.env
+.env.*
+
+# Ansible
+*.retry
