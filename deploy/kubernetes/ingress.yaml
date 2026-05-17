@@ -3,17 +3,13 @@ kind: Ingress
 metadata:
   name: eshop-ingress
   namespace: eshop
-  annotations:
-    # AWS Load Balancer Controller (EKS)
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: "443"
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT:certificate/ID
+
 spec:
+  ingressClassName: traefik
+
   rules:
-    - host: shop.eshop.example.com
+
+    - host: shop.local
       http:
         paths:
           - path: /
@@ -23,7 +19,8 @@ spec:
                 name: webapp
                 port:
                   number: 8080
-    - host: identity.eshop.example.com
+
+    - host: identity.local
       http:
         paths:
           - path: /
@@ -33,7 +30,8 @@ spec:
                 name: identity-api
                 port:
                   number: 8080
-    - host: webhooks.eshop.example.com
+
+    - host: webhooks.local
       http:
         paths:
           - path: /
