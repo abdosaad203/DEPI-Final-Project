@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: identity-api
-          image: eshop/identity-api:latest
+          image: abdosaad0/identity-api:latest
 
           resources:
             requests:
