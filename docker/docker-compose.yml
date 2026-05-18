@@ -7,7 +7,6 @@
 # Logs:  docker compose logs -f webapp identity-api   (service names: webapp, not eshop)
 # Store: http://localhost:5100  |  Aspire dashboard: only via AppHost (see deploy/README.md)
 
-name: eshop
 
 x-host-gateway: &host-gateway
   extra_hosts:
