@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.AI;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.AspNetCore.Http;
 
 public static class Extensions
 {
@@ -89,34 +90,58 @@ public static class Extensions
         var callBackUrl = configuration.GetRequiredValue("CallBackUrl");
         var sessionCookieLifetime = configuration.GetValue("SessionCookieLifetimeMinutes", 60);
 
-        // Add Authentication services
         services.AddAuthorization();
+
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
         })
-        .AddCookie(options => options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionCookieLifetime))
-        .AddOpenIdConnect(options =>
+        .AddCookie(options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionCookieLifetime);
+
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+            options.Cookie.HttpOnly = true;
+        })
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
             options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
             options.Authority = identityUrl;
+
             if (!string.IsNullOrWhiteSpace(identityMetadataAddress))
             {
                 options.MetadataAddress = identityMetadataAddress;
             }
 
             options.SignedOutRedirectUri = callBackUrl;
+
             options.ClientId = "webapp";
             options.ClientSecret = "secret";
+
             options.ResponseType = "code";
+
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
+
             options.RequireHttpsMetadata = false;
+
+            options.CallbackPath = "/signin-oidc";
+
             options.Scope.Add("openid");
             options.Scope.Add("profile");
             options.Scope.Add("orders");
             options.Scope.Add("basket");
+
+            options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
+            options.CorrelationCookie.HttpOnly = true;
+
+            options.NonceCookie.SameSite = SameSiteMode.Lax;
+            options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
+            options.NonceCookie.HttpOnly = true;
         });
 
         // Blazor auth services
