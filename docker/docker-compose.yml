@@ -93,9 +93,9 @@ services:
       WebAppClient: ${PUBLIC_WEBAPP_URL}
       WebhooksWebClient: ${PUBLIC_WEBHOOKS_CLIENT_URL}
 
-      BasketApiClient: http://localhost:8082
-      OrderingApiClient: http://localhost:8084
-      WebhooksApiClient: http://localhost:8085
+      BasketApiClient: http://basket-api:8082
+      OrderingApiClient: http://ordering-api:8084
+      WebhooksApiClient: http://webhooks-api:8085
 
     depends_on:
       postgres:
