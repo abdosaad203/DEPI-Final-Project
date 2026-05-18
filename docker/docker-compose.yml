@@ -1,3 +1,4 @@
+```yaml
 # eShop — Docker Compose using DockerHub images
 
 x-dotnet-env: &dotnet-env
@@ -12,11 +13,11 @@ x-eventbus-env: &eventbus-env
 
 x-identity-jwt-env: &identity-jwt-env
   Identity__Url: ${PUBLIC_IDENTITY_URL}
-  Identity__MetadataAddress: http://identity-api:8080/.well-known/openid-configuration
+  Identity__MetadataAddress: ${PUBLIC_IDENTITY_URL}/.well-known/openid-configuration
 
 x-oidc-client-env: &oidc-client-env
   IdentityUrl: ${PUBLIC_IDENTITY_URL}
-  IdentityMetadataAddress: http://identity-api:8080/.well-known/openid-configuration
+  IdentityMetadataAddress: ${PUBLIC_IDENTITY_URL}/.well-known/openid-configuration
 
 x-dotnet-healthcheck: &dotnet-healthcheck
   test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1"]
@@ -349,3 +350,4 @@ volumes:
 networks:
   eshop-network:
     driver: bridge
+```
