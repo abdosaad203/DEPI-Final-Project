@@ -1,4 +1,3 @@
-```yaml
 # eShop — Docker Compose using DockerHub images
 
 x-dotnet-env: &dotnet-env
