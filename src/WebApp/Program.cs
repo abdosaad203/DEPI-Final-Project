@@ -1,4 +1,5 @@
 ﻿using eShop.WebApp.Components;
+using eShop.WebApp.Extensions;
 using eShop.ServiceDefaults;
 using Microsoft.AspNetCore.Http;
 
@@ -6,9 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
-builder.Services.AddApplicationServices();
+builder.AddApplicationServices();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -27,12 +29,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseAntiforgery();
-
-if (!app.Configuration.GetValue("DisableHttpsRedirection", false))
-{
-    app.UseHttpsRedirection();
-}
+// تعطيل HTTPS مؤقتًا علشان OIDC
+// app.UseHttpsRedirection();
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {
@@ -42,13 +40,23 @@ app.UseCookiePolicy(new CookiePolicyOptions
 
 app.UseStaticFiles();
 
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.UseAntiforgery();
 
-var catalogForwarder = app.Configuration["ServiceUrls:catalog-api-forwarder"]
-    ?? (string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+var catalogForwarder =
+    app.Configuration["ServiceUrls:catalog-api-forwarder"]
+    ?? (string.Equals(
+        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
+        "true",
+        StringComparison.OrdinalIgnoreCase)
         ? "http://catalog-api:8080"
         : "https+http://catalog-api");
 
-app.MapForwarder("/product-images/{id}", catalogForwarder, "/api/catalog/items/{id}/pic");
+app.MapForwarder(
+    "/product-images/{id}",
+    catalogForwarder,
+    "/api/catalog/items/{id}/pic");
 
 app.Run();
