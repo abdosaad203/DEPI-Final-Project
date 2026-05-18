@@ -8,36 +8,12 @@ spec:
   ingressClassName: traefik
 
   rules:
-
-    - host: shop.local
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
                 name: webapp
-                port:
-                  number: 8080
-
-    - host: identity.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: identity-api
-                port:
-                  number: 8080
-
-    - host: webhooks.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: webhooksclient
                 port:
                   number: 8080
