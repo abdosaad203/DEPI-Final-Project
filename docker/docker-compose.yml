@@ -1,12 +1,4 @@
 # eShop — local Docker Compose stack (mirrors Aspire AppHost dependencies).
-# Usage:
-#   cp docker/.env.example docker/.env
-#   ./docker/build-images.sh
-#   docker compose -f docker/docker-compose.yml --env-file docker/.env up -d
-#
-# Logs:  docker compose logs -f webapp identity-api   (service names: webapp, not eshop)
-# Store: http://localhost:5100  |  Aspire dashboard: only via AppHost (see deploy/README.md)
-
 
 x-host-gateway: &host-gateway
   extra_hosts:
@@ -22,7 +14,6 @@ x-eventbus-env: &eventbus-env
   ConnectionStrings__eventbus: amqp://guest:guest@rabbitmq:5672
   ConnectionStrings__EventBus: amqp://guest:guest@rabbitmq:5672
 
-# Browser/issuer URL (localhost) + internal metadata URL (Docker DNS) — do not use localhost inside containers.
 x-identity-jwt-env: &identity-jwt-env
   Identity__Url: ${PUBLIC_IDENTITY_URL}
   Identity__MetadataAddress: http://identity-api:8080/.well-known/openid-configuration
@@ -31,7 +22,6 @@ x-oidc-client-env: &oidc-client-env
   IdentityUrl: ${PUBLIC_IDENTITY_URL}
   IdentityMetadataAddress: http://identity-api:8080/.well-known/openid-configuration
 
-# Required for depends_on: condition: service_healthy (no curl in image — TCP check on :8080).
 x-dotnet-healthcheck: &dotnet-healthcheck
   test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1"]
   interval: 10s
@@ -40,6 +30,7 @@ x-dotnet-healthcheck: &dotnet-healthcheck
   start_period: 120s
 
 services:
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -57,6 +48,7 @@ services:
       retries: 10
     networks:
       - eshop-network
+
   redis:
     image: redis:7-alpine
     ports:
@@ -89,23 +81,38 @@ services:
       args:
         PROJECT_PATH: src/Identity.API/Identity.API.csproj
         ASSEMBLY_NAME: Identity.API
+
     image: eshop/identity-api:latest
+
+    env_file:
+      - .env
+
     ports:
       - "8081:8080"
 
     environment:
       <<: *dotnet-env
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+      PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
+      PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+
       IssuerUri: ${PUBLIC_IDENTITY_URL}
+
       ConnectionStrings__identitydb: Host=postgres;Port=5432;Database=identitydb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+
       WebAppClient: ${PUBLIC_WEBAPP_URL}
       WebhooksWebClient: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+
       BasketApiClient: http://localhost:8082
       OrderingApiClient: http://localhost:8084
       WebhooksApiClient: http://localhost:8085
+
     depends_on:
       postgres:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -116,22 +123,36 @@ services:
       args:
         PROJECT_PATH: src/Basket.API/Basket.API.csproj
         ASSEMBLY_NAME: Basket.API
+
     image: eshop/basket-api:latest
+
+    env_file:
+      - .env
+
     ports:
       - "8082:8080"
+
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
+
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+
       ConnectionStrings__redis: redis:6379
       Identity__Audience: basket
       Kestrel__EndpointDefaults__Protocols: Http1AndHttp2
+
     depends_on:
       redis:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
       identity-api:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -142,18 +163,26 @@ services:
       args:
         PROJECT_PATH: src/Catalog.API/Catalog.API.csproj
         ASSEMBLY_NAME: Catalog.API
+
     image: eshop/catalog-api:latest
+
     ports:
       - "8083:8080"
+
     environment:
       <<: [*dotnet-env, *eventbus-env]
+
       ConnectionStrings__catalogdb: Host=postgres;Port=5432;Database=catalogdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+
     depends_on:
       postgres:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -164,21 +193,36 @@ services:
       args:
         PROJECT_PATH: src/Ordering.API/Ordering.API.csproj
         ASSEMBLY_NAME: Ordering.API
+
     image: eshop/ordering-api:latest
+
+    env_file:
+      - .env
+
     ports:
       - "8084:8080"
+
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
+
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+
       ConnectionStrings__orderingdb: Host=postgres;Port=5432;Database=orderingdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+
       Identity__Audience: orders
+
     depends_on:
       postgres:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
       identity-api:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -189,21 +233,36 @@ services:
       args:
         PROJECT_PATH: src/Webhooks.API/Webhooks.API.csproj
         ASSEMBLY_NAME: Webhooks.API
+
     image: eshop/webhooks-api:latest
+
+    env_file:
+      - .env
+
     ports:
       - "8085:8080"
+
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
+
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+
       ConnectionStrings__webhooksdb: Host=postgres;Port=5432;Database=webhooksdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+
       Identity__Audience: webhooks
+
     depends_on:
       postgres:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
       identity-api:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -214,18 +273,26 @@ services:
       args:
         PROJECT_PATH: src/OrderProcessor/OrderProcessor.csproj
         ASSEMBLY_NAME: OrderProcessor
+
     image: eshop/order-processor:latest
+
     environment:
       <<: [*dotnet-env, *eventbus-env]
+
       ConnectionStrings__orderingdb: Host=postgres;Port=5432;Database=orderingdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+
     depends_on:
       postgres:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
       ordering-api:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -236,13 +303,18 @@ services:
       args:
         PROJECT_PATH: src/PaymentProcessor/PaymentProcessor.csproj
         ASSEMBLY_NAME: PaymentProcessor
+
     image: eshop/payment-processor:latest
+
     environment:
       <<: [*dotnet-env, *eventbus-env]
+
     depends_on:
       rabbitmq:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -253,31 +325,51 @@ services:
       args:
         PROJECT_PATH: src/WebApp/WebApp.csproj
         ASSEMBLY_NAME: WebApp
+
     image: eshop/webapp:latest
+
+    env_file:
+      - .env
+
     ports:
       - "5100:8080"
+
     environment:
       <<: [*dotnet-env, *eventbus-env, *oidc-client-env]
+
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+      PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
+      PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+
       CallBackUrl: ${PUBLIC_WEBAPP_URL}/signin-oidc
+
       ServiceUrls__basket-api: http://basket-api:8080
       ServiceUrls__catalog-api: http://catalog-api:8080
       ServiceUrls__ordering-api: http://ordering-api:8080
       ServiceUrls__catalog-api-forwarder: http://catalog-api:8080
+
       Services__catalog-api__http__0: http://catalog-api:8080
       Services__ordering-api__http__0: http://ordering-api:8080
       Services__basket-api__http__0: http://basket-api:8080
+
     depends_on:
       identity-api:
         condition: service_healthy
+
       basket-api:
         condition: service_healthy
+
       catalog-api:
         condition: service_healthy
+
       ordering-api:
         condition: service_healthy
+
       rabbitmq:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
@@ -288,23 +380,38 @@ services:
       args:
         PROJECT_PATH: src/WebhookClient/WebhookClient.csproj
         ASSEMBLY_NAME: WebhookClient
+
     image: eshop/webhooksclient:latest
+
+    env_file:
+      - .env
+
     ports:
       - "5102:8080"
+
     environment:
       <<: [*dotnet-env, *oidc-client-env]
+
+      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
+      PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+
       CallBackUrl: ${PUBLIC_WEBHOOKS_CLIENT_URL}/signin-oidc
+
     depends_on:
       identity-api:
         condition: service_healthy
+
       webhooks-api:
         condition: service_healthy
+
     healthcheck: *dotnet-healthcheck
+
     networks:
       - eshop-network
 
 volumes:
   postgres-data:
+
 networks:
   eshop-network:
     driver: bridge
