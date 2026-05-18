@@ -129,6 +129,42 @@ Remove in-cluster `postgres.yaml` when using RDS and update connection strings i
 
 ---
 
+## Kubernetes monitoring (k3s / EKS)
+
+Plain YAML manifests (no Helm, no Kustomize): **Prometheus**, **Grafana**, **node-exporter**, **kube-state-metrics**.
+
+Scrapes cluster/node/pod metrics and cAdvisor container stats.
+
+### Install
+
+```bash
+kubectl apply -f deploy/kubernetes/monitoring/
+```
+
+### Access Grafana
+
+```bash
+kubectl -n monitoring port-forward svc/grafana 3000:80
+```
+
+Open http://localhost:3000 — user `admin`, password `admin` (change `monitoring/grafana.yaml` secret before production).
+
+**Via Traefik (k3s):** edit `monitoring/grafana-ingress.yaml` and point `grafana.local` at your node IP.
+
+### Prometheus UI
+
+```bash
+kubectl -n monitoring port-forward svc/prometheus 9090:9090
+```
+
+### Uninstall
+
+```bash
+kubectl delete -f deploy/kubernetes/monitoring/
+```
+
+---
+
 ## Files
 
 ```
@@ -144,6 +180,7 @@ deploy/kubernetes/
   infrastructure/      # postgres, redis, rabbitmq
   apps/                # Deployments + Services
   ingress.yaml         # ALB ingress for EKS
+  monitoring/          # Prometheus + Grafana (plain YAML)
 ```
 
 ## Application changes for containers

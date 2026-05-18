@@ -19,6 +19,7 @@ data:
   ASPNETCORE_ENVIRONMENT: "Production"
   ENABLE_HEALTH_CHECKS: "true"
   DisableHttpsRedirection: "true"
+
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
 
   ConnectionStrings__eventbus: "amqp://guest:guest@rabbitmq:5672"

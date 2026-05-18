@@ -1,4 +1,3 @@
-# Configure which branches trigger builds
 trigger:
   batch: true
   branches:
@@ -11,7 +10,6 @@ variables:
 
 resources:
   repositories:
-    # Repo: 1ESPipelineTemplates/1ESPipelineTemplates
     - repository: 1esPipelines
       type: git
       name: 1ESPipelineTemplates/1ESPipelineTemplates
