@@ -123,6 +123,9 @@ public static class Extensions
 
             options.ResponseType = "code";
 
+            options.UsePkce = false;
+            options.ResponseMode = "query";
+
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
 
@@ -142,6 +145,7 @@ public static class Extensions
             options.NonceCookie.SameSite = SameSiteMode.Lax;
             options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
             options.NonceCookie.HttpOnly = true;
+
         });
 
         // Blazor auth services
