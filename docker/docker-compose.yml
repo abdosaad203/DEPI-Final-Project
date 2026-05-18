@@ -349,4 +349,3 @@ volumes:
 networks:
   eshop-network:
     driver: bridge
-```
