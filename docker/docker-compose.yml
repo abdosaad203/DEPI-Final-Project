@@ -1,8 +1,4 @@
-# eShop — local Docker Compose stack (mirrors Aspire AppHost dependencies).
-
-x-host-gateway: &host-gateway
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
+# eShop — Docker Compose using DockerHub images
 
 x-dotnet-env: &dotnet-env
   ASPNETCORE_ENVIRONMENT: Production
@@ -75,14 +71,7 @@ services:
       - eshop-network
 
   identity-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/Identity.API/Identity.API.csproj
-        ASSEMBLY_NAME: Identity.API
-
-    image: eshop/identity-api:latest
+    image: abdosaad0/identity-api:latest
 
     env_file:
       - .env
@@ -92,6 +81,7 @@ services:
 
     environment:
       <<: *dotnet-env
+
       PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
       PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
       PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
@@ -117,14 +107,7 @@ services:
       - eshop-network
 
   basket-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/Basket.API/Basket.API.csproj
-        ASSEMBLY_NAME: Basket.API
-
-    image: eshop/basket-api:latest
+    image: abdosaad0/basket-api:latest
 
     env_file:
       - .env
@@ -157,14 +140,7 @@ services:
       - eshop-network
 
   catalog-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/Catalog.API/Catalog.API.csproj
-        ASSEMBLY_NAME: Catalog.API
-
-    image: eshop/catalog-api:latest
+    image: abdosaad0/catalog-api:latest
 
     ports:
       - "8083:8080"
@@ -187,14 +163,7 @@ services:
       - eshop-network
 
   ordering-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/Ordering.API/Ordering.API.csproj
-        ASSEMBLY_NAME: Ordering.API
-
-    image: eshop/ordering-api:latest
+    image: abdosaad0/ordering-api:latest
 
     env_file:
       - .env
@@ -227,14 +196,7 @@ services:
       - eshop-network
 
   webhooks-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/Webhooks.API/Webhooks.API.csproj
-        ASSEMBLY_NAME: Webhooks.API
-
-    image: eshop/webhooks-api:latest
+    image: abdosaad0/webhooks-api:latest
 
     env_file:
       - .env
@@ -267,14 +229,7 @@ services:
       - eshop-network
 
   order-processor:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/OrderProcessor/OrderProcessor.csproj
-        ASSEMBLY_NAME: OrderProcessor
-
-    image: eshop/order-processor:latest
+    image: abdosaad0/order-processor:latest
 
     environment:
       <<: [*dotnet-env, *eventbus-env]
@@ -297,14 +252,7 @@ services:
       - eshop-network
 
   payment-processor:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/PaymentProcessor/PaymentProcessor.csproj
-        ASSEMBLY_NAME: PaymentProcessor
-
-    image: eshop/payment-processor:latest
+    image: abdosaad0/payment-processor:latest
 
     environment:
       <<: [*dotnet-env, *eventbus-env]
@@ -319,14 +267,7 @@ services:
       - eshop-network
 
   webapp:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/WebApp/WebApp.csproj
-        ASSEMBLY_NAME: WebApp
-
-    image: eshop/webapp:latest
+    image: abdosaad0/webapp:latest
 
     env_file:
       - .env
@@ -374,14 +315,7 @@ services:
       - eshop-network
 
   webhooksclient:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        PROJECT_PATH: src/WebhookClient/WebhookClient.csproj
-        ASSEMBLY_NAME: WebhookClient
-
-    image: eshop/webhooksclient:latest
+    image: abdosaad0/webhooksclient:latest
 
     env_file:
       - .env
