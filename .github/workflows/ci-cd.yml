@@ -16,21 +16,27 @@ jobs:
 
           - image: webapp
             project: src/WebApp/WebApp.csproj
+            assembly: WebApp
 
           - image: catalog-api
             project: src/Catalog.API/Catalog.API.csproj
+            assembly: Catalog.API
 
           - image: basket-api
             project: src/Basket.API/Basket.API.csproj
+            assembly: Basket.API
 
           - image: ordering-api
             project: src/Ordering.API/Ordering.API.csproj
+            assembly: Ordering.API
 
           - image: identity-api
             project: src/Identity.API/Identity.API.csproj
+            assembly: Identity.API
 
           - image: webhooks-api
             project: src/Webhooks.API/Webhooks.API.csproj
+            assembly: Webhooks.API
 
     steps:
 
@@ -47,6 +53,7 @@ jobs:
         run: |
           docker build \
             --build-arg PROJECT_PATH=${{ matrix.project }} \
+            --build-arg ASSEMBLY_NAME=${{ matrix.assembly }} \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:latest \
             -f docker/Dockerfile \
             .
