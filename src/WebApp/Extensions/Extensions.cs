@@ -54,7 +54,6 @@ public static class Extensions
             return new Uri(configured);
         }
 
-        // Docker/K8s: APIs listen on HTTP :8080, not Aspire's https+http service discovery.
         if (string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase))
         {
             return new Uri($"http://{serviceName}:8080");
@@ -99,6 +98,8 @@ public static class Extensions
         })
         .AddCookie(options =>
         {
+            options.Cookie.Name = "webapp_auth";
+
             options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionCookieLifetime);
 
             options.Cookie.SameSite = SameSiteMode.Lax;
@@ -146,7 +147,16 @@ public static class Extensions
             options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
             options.NonceCookie.HttpOnly = true;
 
+            // IMPORTANT FIX
+            options.Events.OnRedirectToIdentityProvider = context =>
+            {
+                context.ProtocolMessage.RedirectUri = "http://3.219.47.47:5100/signin-oidc";
+                return Task.CompletedTask;
+            };
         });
+
+        services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
         // Blazor auth services
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
