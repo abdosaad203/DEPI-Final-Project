@@ -1,60 +1,41 @@
-﻿using eShop.WebApp.Components;
+﻿﻿using eShop.WebApp.Components;
 using eShop.ServiceDefaults;
-using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-builder.Services.AddApplicationServices();
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-});
+builder.AddApplicationServices();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-// Disable HTTPS temporarily for OIDC issue
-// app.UseHttpsRedirection();
+app.UseAntiforgery();
 
-app.UseCookiePolicy(new CookiePolicyOptions
+if (!app.Configuration.GetValue("DisableHttpsRedirection", false))
 {
-    MinimumSameSitePolicy = SameSiteMode.Lax,
-    Secure = CookieSecurePolicy.None
-});
+    app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 
-app.UseAntiforgery();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-var catalogForwarder =
-    app.Configuration["ServiceUrls:catalog-api-forwarder"]
-    ?? (string.Equals(
-        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
-        "true",
-        StringComparison.OrdinalIgnoreCase)
+var catalogForwarder = app.Configuration["ServiceUrls:catalog-api-forwarder"]
+    ?? (string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)
         ? "http://catalog-api:8080"
         : "https+http://catalog-api");
-
-app.MapForwarder(
-    "/product-images/{id}",
-    catalogForwarder,
-    "/api/catalog/items/{id}/pic");
+app.MapForwarder("/product-images/{id}", catalogForwarder, "/api/catalog/items/{id}/pic");
 
 app.Run();
