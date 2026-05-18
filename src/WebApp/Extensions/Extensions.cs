@@ -111,6 +111,8 @@ public static class Extensions
 
             options.ClientId = "webapp";
 
+            options.ClientSecret = "secret";
+
             options.ResponseType = "code";
 
             options.SaveTokens = true;
