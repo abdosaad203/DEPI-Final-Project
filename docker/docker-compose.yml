@@ -281,6 +281,7 @@ services:
       PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
       PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
       PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+      Authentication__RequireHttpsMetadata: "false"
 
       CallBackUrl: ${PUBLIC_WEBAPP_URL}/signin-oidc
 
