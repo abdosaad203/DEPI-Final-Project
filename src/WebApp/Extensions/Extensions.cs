@@ -2,6 +2,7 @@
 using eShop.WebApp.Services.OrderStatus.IntegrationEvents;
 using eShop.WebAppComponents.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.AI;
@@ -23,6 +24,7 @@ public static class Extensions
         builder.Services.AddSingleton<BasketService>();
         builder.Services.AddSingleton<OrderStatusNotificationService>();
         builder.Services.AddSingleton<IProductImageUrlProvider, ProductImageUrlProvider>();
+
         builder.AddAIServices();
 
         // HTTP and GRPC client registrations
@@ -46,6 +48,7 @@ public static class Extensions
     private static Uri GetServiceAddress(IConfiguration configuration, string serviceName)
     {
         var configured = configuration[$"ServiceUrls:{serviceName}"];
+
         if (!string.IsNullOrWhiteSpace(configured))
         {
             return new Uri(configured);
@@ -74,26 +77,49 @@ public static class Extensions
         eventBus.AddSubscription<OrderStatusChangedToSubmittedIntegrationEvent, OrderStatusChangedToSubmittedIntegrationEventHandler>();
     }
 
-    // AUTH DISABLED TEMPORARILY
     public static void AddAuthenticationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
+        var configuration = builder.Configuration;
+
+        var identityUrl = configuration["IdentityUrl"]
+            ?? configuration["PUBLIC_IDENTITY_URL"]
+            ?? "http://localhost:8081";
 
         services.AddAuthorization();
 
-        services.AddAuthentication("Cookies")
-            .AddCookie("Cookies", options =>
-            {
-                options.LoginPath = "/";
+        services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = "oidc";
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            options.Cookie.Name = "eshopauth";
 
-                options.Cookie.Name = "webapp_auth";
+            options.Cookie.SameSite = SameSiteMode.Lax;
 
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-                options.Cookie.HttpOnly = true;
-            });
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+
+            options.LoginPath = "/";
+        })
+        .AddOpenIdConnect("oidc", options =>
+        {
+            options.Authority = identityUrl;
+
+            options.RequireHttpsMetadata = false;
+
+            options.ClientId = "webapp";
+
+            options.ResponseType = "code";
+
+            options.SaveTokens = true;
+
+            options.GetClaimsFromUserInfoEndpoint = true;
+        });
 
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
+
         services.AddCascadingAuthenticationState();
     }
 

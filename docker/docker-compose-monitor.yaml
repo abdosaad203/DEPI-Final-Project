@@ -52,11 +52,3 @@ services:
       - /:/host:ro,rslave
     networks:
       - monitoring
-
-networks:
-  monitoring:
-    driver: bridge
-
-volumes:
-  prometheus_data: {}
-  grafana_data: {}
