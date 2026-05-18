@@ -2,12 +2,9 @@
 using eShop.WebApp.Services.OrderStatus.IntegrationEvents;
 using eShop.WebAppComponents.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.AI;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.AspNetCore.Http;
 
 public static class Extensions
 {
@@ -61,9 +58,9 @@ public static class Extensions
 
         return serviceName switch
         {
-            "catalog-api" => new Uri("https+http://catalog-api"),
-            "ordering-api" => new Uri("https+http://ordering-api"),
-            _ => new Uri($"http://{serviceName}")
+            "catalog-api" => new Uri("http://catalog-api:8080"),
+            "ordering-api" => new Uri("http://ordering-api:8080"),
+            _ => new Uri($"http://{serviceName}:8080")
         };
     }
 
@@ -77,88 +74,25 @@ public static class Extensions
         eventBus.AddSubscription<OrderStatusChangedToSubmittedIntegrationEvent, OrderStatusChangedToSubmittedIntegrationEventHandler>();
     }
 
+    // AUTH DISABLED TEMPORARILY
     public static void AddAuthenticationServices(this IHostApplicationBuilder builder)
     {
-        var configuration = builder.Configuration;
         var services = builder.Services;
-
-        JsonWebTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
-
-        var identityUrl = configuration.GetRequiredValue("IdentityUrl");
-        var identityMetadataAddress = configuration["IdentityMetadataAddress"];
-        var callBackUrl = configuration.GetRequiredValue("CallBackUrl");
-        var sessionCookieLifetime = configuration.GetValue("SessionCookieLifetimeMinutes", 60);
 
         services.AddAuthorization();
 
-        services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-        })
-        .AddCookie(options =>
-        {
-            options.Cookie.Name = "webapp_auth";
-
-            options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionCookieLifetime);
-
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-            options.Cookie.HttpOnly = true;
-        })
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-        {
-            options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-
-            options.Authority = identityUrl;
-
-            if (!string.IsNullOrWhiteSpace(identityMetadataAddress))
+        services.AddAuthentication("Cookies")
+            .AddCookie("Cookies", options =>
             {
-                options.MetadataAddress = identityMetadataAddress;
-            }
+                options.LoginPath = "/";
 
-            options.SignedOutRedirectUri = callBackUrl;
+                options.Cookie.Name = "webapp_auth";
 
-            options.ClientId = "webapp";
-            options.ClientSecret = "secret";
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+                options.Cookie.HttpOnly = true;
+            });
 
-            options.ResponseType = "code";
-
-            options.UsePkce = false;
-            options.ResponseMode = "query";
-
-            options.SaveTokens = true;
-            options.GetClaimsFromUserInfoEndpoint = true;
-
-            options.RequireHttpsMetadata = false;
-
-            options.CallbackPath = "/signin-oidc";
-
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("orders");
-            options.Scope.Add("basket");
-
-            options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
-            options.CorrelationCookie.HttpOnly = true;
-
-            options.NonceCookie.SameSite = SameSiteMode.Lax;
-            options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
-            options.NonceCookie.HttpOnly = true;
-
-            // IMPORTANT FIX
-            options.Events.OnRedirectToIdentityProvider = context =>
-            {
-                context.ProtocolMessage.RedirectUri = "http://3.219.47.47:5100/signin-oidc";
-                return Task.CompletedTask;
-            };
-        });
-
-        services.AddDataProtection()
-            .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
-
-        // Blazor auth services
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
     }
@@ -166,6 +100,7 @@ public static class Extensions
     private static void AddAIServices(this IHostApplicationBuilder builder)
     {
         ChatClientBuilder? chatClientBuilder = null;
+
         if (builder.Configuration["OllamaEnabled"] is string ollamaEnabled && bool.Parse(ollamaEnabled))
         {
             chatClientBuilder = builder.AddOllamaApiClient("chat")
@@ -182,15 +117,11 @@ public static class Extensions
 
     public static async Task<string?> GetBuyerIdAsync(this AuthenticationStateProvider authenticationStateProvider)
     {
-        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        return user.FindFirst("sub")?.Value;
+        return "demo-user";
     }
 
     public static async Task<string?> GetUserNameAsync(this AuthenticationStateProvider authenticationStateProvider)
     {
-        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        return user.FindFirst("name")?.Value;
+        return "Demo User";
     }
 }
