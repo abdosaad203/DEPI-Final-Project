@@ -1,7 +1,7 @@
 # eShop — Docker Compose using DockerHub images
 
 x-dotnet-env: &dotnet-env
-  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_ENVIRONMENT: Development
   ENABLE_HEALTH_CHECKS: "true"
   DisableHttpsRedirection: "true"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
