@@ -1,5 +1,4 @@
 ﻿using eShop.WebApp.Components;
-using eShop.WebApp.Extensions;
 using eShop.ServiceDefaults;
 using Microsoft.AspNetCore.Http;
 
@@ -10,7 +9,7 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.AddApplicationServices();
+builder.Services.AddApplicationServices();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -22,14 +21,13 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
-// تعطيل HTTPS مؤقتًا علشان OIDC
+// Disable HTTPS temporarily for OIDC issue
 // app.UseHttpsRedirection();
 
 app.UseCookiePolicy(new CookiePolicyOptions
