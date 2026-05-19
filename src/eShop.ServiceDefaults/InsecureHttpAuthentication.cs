@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -16,14 +15,14 @@ public static class InsecureHttpAuthentication
         || configuration.GetValue("AllowInsecureAuthentication", false)
         || configuration.GetValue("DisableHttpsRedirection", false);
 
-    public static void ConfigureOpenIdConnect(OpenIdConnectOptions options)
-    {
-        options.RequireHttpsMetadata = false;
-        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
-        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-        options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
-        options.NonceCookie.SameSite = SameSiteMode.None;
-    }
+    // public static void ConfigureOpenIdConnect(OpenIdConnectOptions options)
+    // {
+    //     options.RequireHttpsMetadata = false;
+    //     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
+    //     options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+    //     options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
+    //     options.NonceCookie.SameSite = SameSiteMode.None;
+    // }
 
     public static void ConfigureCookie(CookieAuthenticationOptions options)
     {

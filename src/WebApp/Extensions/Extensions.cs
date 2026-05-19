@@ -78,6 +78,17 @@ public static class Extensions
         eventBus.AddSubscription<OrderStatusChangedToSubmittedIntegrationEvent, OrderStatusChangedToSubmittedIntegrationEventHandler>();
     }
 
+    private static void ConfigureOpenIdConnect(OpenIdConnectOptions options)
+    {
+        options.RequireHttpsMetadata = false;
+
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
+        options.CorrelationCookie.SameSite = SameSiteMode.None;
+
+        options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
+        options.NonceCookie.SameSite = SameSiteMode.None;
+    }
+
     public static void AddAuthenticationServices(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -100,6 +111,7 @@ public static class Extensions
             options.Cookie.Name = "eshopauth";
 
             options.LoginPath = "/";
+
             if (allowInsecureHttp)
             {
                 InsecureHttpAuthentication.ConfigureCookie(options);
@@ -109,36 +121,36 @@ public static class Extensions
                 options.Cookie.SameSite = SameSiteMode.Lax;
             }
         })
-       .AddOpenIdConnect("oidc", options =>
-{
-    options.Authority = identityUrl;
+        .AddOpenIdConnect("oidc", options =>
+        {
+            options.Authority = identityUrl;
 
-    if (allowInsecureHttp)
-    {
-        InsecureHttpAuthentication.ConfigureOpenIdConnect(options);
-    }
-    else
-    {
-        options.RequireHttpsMetadata = true;
-    }
+            if (allowInsecureHttp)
+            {
+                ConfigureOpenIdConnect(options);
+            }
+            else
+            {
+                options.RequireHttpsMetadata = true;
+            }
 
-    options.ClientId = "webapp";
+            options.ClientId = "webapp";
 
-    options.ClientSecret = "secret";
+            options.ClientSecret = "secret";
 
-    options.ResponseType = "code";
+            options.ResponseType = "code";
 
-    options.CallbackPath = "/signin-oidc";
-    options.SignedOutCallbackPath = "/signout-callback-oidc";
+            options.CallbackPath = "/signin-oidc";
+            options.SignedOutCallbackPath = "/signout-callback-oidc";
 
-    options.SaveTokens = true;
+            options.SaveTokens = true;
 
-    options.GetClaimsFromUserInfoEndpoint = true;
+            options.GetClaimsFromUserInfoEndpoint = true;
 
-    options.Scope.Add("openid");
-    options.Scope.Add("profile");
-    options.Scope.Add("offline_access");
-});
+            options.Scope.Add("openid");
+            options.Scope.Add("profile");
+            options.Scope.Add("offline_access");
+        });
 
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 
