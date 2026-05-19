@@ -13,6 +13,8 @@ jobs:
 
   build-and-push:
 
+    name: Build and Push Docker Images
+
     runs-on: ubuntu-latest
 
     strategy:
@@ -61,6 +63,8 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          echo "Building ${{ matrix.image }}..."
+
           docker build \
             --build-arg PROJECT_PATH=${{ matrix.project }} \
             --build-arg ASSEMBLY_NAME=${{ matrix.assembly }} \
@@ -70,11 +74,13 @@ jobs:
 
       - name: Push Docker Image
         run: |
+          echo "Pushing ${{ matrix.image }}..."
+
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
 
   deploy:
 
-    name: Deploy Application
+    name: Deploy Application to EC2
 
     needs: build-and-push
 
@@ -82,7 +88,7 @@ jobs:
 
     steps:
 
-      - name: Deploy to EC2 Server
+      - name: Deploy Containers
         uses: appleboy/ssh-action@v1.0.3
 
         with:
@@ -92,25 +98,29 @@ jobs:
 
           script: |
 
-            echo "Starting deployment..."
+            echo "======================================="
+            echo "Starting Deployment..."
+            echo "======================================="
 
             cd ~/Depi-final/docker
 
-            echo "Pulling latest images..."
+            echo "Pulling latest Docker images..."
             docker-compose pull
 
             echo "Stopping old containers..."
             docker-compose down
 
             echo "Starting updated containers..."
-            docker-compose up -d
+            docker-compose up -d --force-recreate
 
-            echo "Cleaning unused Docker images..."
+            echo "Removing unused Docker images..."
             docker image prune -f
 
-            echo "Deployment completed successfully."
+            echo "======================================="
+            echo "Deployment Completed Successfully"
+            echo "======================================="
 
-      - name: Verify Running Containers
+      - name: Verify Deployment
         uses: appleboy/ssh-action@v1.0.3
 
         with:
@@ -120,10 +130,18 @@ jobs:
 
           script: |
 
-            echo "Checking running containers..."
+            echo "======================================="
+            echo "Running Containers"
+            echo "======================================="
 
             docker ps
 
-            echo "Checking application health..."
+            echo "======================================="
+            echo "Checking WebApp Health"
+            echo "======================================="
 
             curl -I http://localhost:5100 || true
+
+            echo "======================================="
+            echo "Deployment Verification Finished"
+            echo "======================================="
