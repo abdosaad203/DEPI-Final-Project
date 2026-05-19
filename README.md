@@ -240,5 +240,3 @@ http://100.48.167.201:5100
 # 👨‍💻 Author
 
 DEPI DevOps Graduation Project
-
-Built with ❤️ using DevOps best practices.
