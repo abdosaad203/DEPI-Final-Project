@@ -83,10 +83,10 @@ public static class Extensions
         options.RequireHttpsMetadata = false;
 
         options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
-        options.CorrelationCookie.SameSite = SameSiteMode.None;
+        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
 
         options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
-        options.NonceCookie.SameSite = SameSiteMode.None;
+        options.NonceCookie.SameSite = SameSiteMode.Lax;
     }
 
     public static void AddAuthenticationServices(this IHostApplicationBuilder builder)
@@ -141,6 +141,7 @@ public static class Extensions
             options.ResponseType = "code";
 
             options.CallbackPath = "/signin-oidc";
+
             options.SignedOutCallbackPath = "/signout-callback-oidc";
 
             options.SaveTokens = true;
