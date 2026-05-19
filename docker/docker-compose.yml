@@ -1,4 +1,4 @@
-# eShop — Docker Compose using DockerHub images
+# eShop — Production-like Docker Compose
 
 x-dotnet-env: &dotnet-env
   ASPNETCORE_ENVIRONMENT: Development
@@ -25,53 +25,80 @@ x-dotnet-healthcheck: &dotnet-healthcheck
   retries: 12
   start_period: 120s
 
+x-logging: &default-logging
+  logging:
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
 
   postgres:
     image: pgvector/pgvector:pg16
+    restart: unless-stopped
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+
     ports:
       - "5432:5432"
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
+
     ports:
       - "6379:6379"
+
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
+
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+
     ports:
       - "5672:5672"
       - "15672:15672"
+
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
+
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   identity-api:
-    image: abdosaad0/identity-api:latest
+    image: abdosaad0/identity-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     env_file:
       - .env
@@ -85,7 +112,6 @@ services:
       PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
       PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
       PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
-      
 
       IssuerUri: ${PUBLIC_IDENTITY_URL}
 
@@ -94,9 +120,9 @@ services:
       WebAppClient: ${PUBLIC_WEBAPP_URL}
       WebhooksWebClient: ${PUBLIC_WEBHOOKS_CLIENT_URL}
 
-      BasketApiClient: http://basket-api:8082
-      OrderingApiClient: http://ordering-api:8084
-      WebhooksApiClient: http://webhooks-api:8085
+      BasketApiClient: http://basket-api:8080
+      OrderingApiClient: http://ordering-api:8080
+      WebhooksApiClient: http://webhooks-api:8080
 
     depends_on:
       postgres:
@@ -107,8 +133,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   basket-api:
-    image: abdosaad0/basket-api:latest
+    image: abdosaad0/basket-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     env_file:
       - .env
@@ -119,11 +148,9 @@ services:
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
 
-      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
-
       ConnectionStrings__redis: redis:6379
+
       Identity__Audience: basket
-      Kestrel__EndpointDefaults__Protocols: Http1AndHttp2
 
     depends_on:
       redis:
@@ -140,8 +167,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   catalog-api:
-    image: abdosaad0/catalog-api:latest
+    image: abdosaad0/catalog-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     ports:
       - "8083:8080"
@@ -163,8 +193,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   ordering-api:
-    image: abdosaad0/ordering-api:latest
+    image: abdosaad0/ordering-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     env_file:
       - .env
@@ -174,8 +207,6 @@ services:
 
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
-
-      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
 
       ConnectionStrings__orderingdb: Host=postgres;Port=5432;Database=orderingdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
 
@@ -196,8 +227,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   webhooks-api:
-    image: abdosaad0/webhooks-api:latest
+    image: abdosaad0/webhooks-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     env_file:
       - .env
@@ -207,8 +241,6 @@ services:
 
     environment:
       <<: [*dotnet-env, *eventbus-env, *identity-jwt-env]
-
-      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
 
       ConnectionStrings__webhooksdb: Host=postgres;Port=5432;Database=webhooksdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
 
@@ -229,8 +261,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   order-processor:
-    image: abdosaad0/order-processor:latest
+    image: abdosaad0/order-processor:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     environment:
       <<: [*dotnet-env, *eventbus-env]
@@ -244,16 +279,16 @@ services:
       rabbitmq:
         condition: service_healthy
 
-      ordering-api:
-        condition: service_healthy
-
     healthcheck: *dotnet-healthcheck
 
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   payment-processor:
-    image: abdosaad0/payment-processor:latest
+    image: abdosaad0/payment-processor:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     environment:
       <<: [*dotnet-env, *eventbus-env]
@@ -267,8 +302,11 @@ services:
     networks:
       - eshop-network
 
+    <<: *default-logging
+
   webapp:
-    image: abdosaad0/webapp:latest
+    image: abdosaad0/webapp:${IMAGE_TAG:-latest}
+    restart: unless-stopped
 
     env_file:
       - .env
@@ -282,6 +320,7 @@ services:
       PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
       PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
       PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
+
       Authentication__RequireHttpsMetadata: "false"
 
       CallBackUrl: ${PUBLIC_WEBAPP_URL}/signin-oidc
@@ -289,11 +328,6 @@ services:
       ServiceUrls__basket-api: http://basket-api:8080
       ServiceUrls__catalog-api: http://catalog-api:8080
       ServiceUrls__ordering-api: http://ordering-api:8080
-      ServiceUrls__catalog-api-forwarder: http://catalog-api:8080
-
-      Services__catalog-api__http__0: http://catalog-api:8080
-      Services__ordering-api__http__0: http://ordering-api:8080
-      Services__basket-api__http__0: http://basket-api:8080
 
     depends_on:
       identity-api:
@@ -308,42 +342,12 @@ services:
       ordering-api:
         condition: service_healthy
 
-      rabbitmq:
-        condition: service_healthy
-
     healthcheck: *dotnet-healthcheck
 
     networks:
       - eshop-network
 
-  webhooksclient:
-    image: abdosaad0/webhooksclient:latest
-
-    env_file:
-      - .env
-
-    ports:
-      - "5102:8080"
-
-    environment:
-      <<: [*dotnet-env, *oidc-client-env]
-
-      PUBLIC_IDENTITY_URL: ${PUBLIC_IDENTITY_URL}
-      PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
-
-      CallBackUrl: ${PUBLIC_WEBHOOKS_CLIENT_URL}/signin-oidc
-
-    depends_on:
-      identity-api:
-        condition: service_healthy
-
-      webhooks-api:
-        condition: service_healthy
-
-    healthcheck: *dotnet-healthcheck
-
-    networks:
-      - eshop-network
+    <<: *default-logging
 
 volumes:
   postgres-data:
