@@ -118,6 +118,10 @@ public static class Extensions
             options.SaveTokens = true;
 
             options.GetClaimsFromUserInfoEndpoint = true;
+
+            options.Scope.Add("openid");
+            options.Scope.Add("profile");
+            options.Scope.Add("offline_access");
         });
 
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
