@@ -4,6 +4,7 @@ x-dotnet-env: &dotnet-env
   ASPNETCORE_ENVIRONMENT: Development
   ENABLE_HEALTH_CHECKS: "true"
   DisableHttpsRedirection: "true"
+  AllowInsecureAuthentication: "true"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
 
 x-eventbus-env: &eventbus-env
@@ -321,9 +322,8 @@ services:
       PUBLIC_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
       PUBLIC_WEBHOOKS_CLIENT_URL: ${PUBLIC_WEBHOOKS_CLIENT_URL}
 
-      Authentication__RequireHttpsMetadata: "false"
 
-      CallBackUrl: ${PUBLIC_WEBAPP_URL}/signin-oidc
+      CallBackUrl: ${PUBLIC_WEBAPP_URL}
 
       ServiceUrls__basket-api: http://basket-api:8080
       ServiceUrls__catalog-api: http://catalog-api:8080

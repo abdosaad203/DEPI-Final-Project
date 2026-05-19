@@ -11,6 +11,8 @@ public static class AuthenticationExtensions
     {
         var services = builder.Services;
         var configuration = builder.Configuration;
+        var environment = builder.Environment;
+        var allowInsecureHttp = InsecureHttpAuthentication.IsAllowed(configuration, environment);
 
         // {
         //   "Identity": {
@@ -36,7 +38,7 @@ public static class AuthenticationExtensions
             var audience = identitySection.GetRequiredValue("Audience");
 
             options.Authority = identityUrl;
-            options.RequireHttpsMetadata = false;
+            options.RequireHttpsMetadata = !allowInsecureHttp;
             options.Audience = audience;
 
             var metadataAddress = identitySection["MetadataAddress"];

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
+using eShop.ServiceDefaults;
 
 namespace eShop.WebhookClient.Extensions;
 
@@ -25,7 +26,7 @@ public static class Extensions
     {
         var configuration = builder.Configuration;
         var services = builder.Services;
-
+        var allowInsecureHttp = InsecureHttpAuthentication.IsAllowed(configuration, builder.Environment);
         var identityUrl = configuration.GetRequiredValue("IdentityUrl");
         var identityMetadataAddress = configuration["IdentityMetadataAddress"];
         var callBackUrl = configuration.GetRequiredValue("CallBackUrl");
@@ -45,6 +46,10 @@ public static class Extensions
             // Must be distinct from WebApp's cookie name, otherwise the two sites will interfere
             // with each other when both are on localhost (yes, even when they are on different ports)
             options.Cookie.Name = ".AspNetCore.WebHooksClientIdentity";
+            if (allowInsecureHttp)
+            {
+                InsecureHttpAuthentication.ConfigureCookie(options);
+            }
         })
         .AddOpenIdConnect(options =>
         {
@@ -61,7 +66,14 @@ public static class Extensions
             options.ResponseType = "code";
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
-            options.RequireHttpsMetadata = false;
+            if (allowInsecureHttp)
+            {
+                InsecureHttpAuthentication.ConfigureOpenIdConnect(options);
+            }
+            else
+            {
+                options.RequireHttpsMetadata = true;
+            }
             options.Scope.Add("openid");
             options.Scope.Add("webhooks");
         });

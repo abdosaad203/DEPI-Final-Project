@@ -1,6 +1,11 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using eShop.ServiceDefaults;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+var allowInsecureHttp = InsecureHttpAuthentication.IsAllowed(builder.Configuration, builder.Environment);
 
 builder.Services.AddControllersWithViews();
 
@@ -14,6 +19,15 @@ builder.Services.AddMigration<ApplicationDbContext, UsersSeed>();
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
+if (allowInsecureHttp)
+{
+    builder.Services.ConfigureApplicationCookie(options =>
+        InsecureHttpAuthentication.ConfigureCookie(options));
+    builder.Services.Configure<CookieAuthenticationOptions>(IdentityServerConstants.DefaultCookieAuthenticationScheme, options =>
+        InsecureHttpAuthentication.ConfigureCookie(options));
+    builder.Services.Configure<CookieAuthenticationOptions>(IdentityServerConstants.ExternalCookieAuthenticationScheme, options =>
+        InsecureHttpAuthentication.ConfigureCookie(options));
+}
 
 builder.Services.AddIdentityServer(options =>
 {

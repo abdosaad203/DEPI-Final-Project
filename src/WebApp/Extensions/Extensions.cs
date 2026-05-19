@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.AI;
+using eShop.ServiceDefaults;
 
 public static class Extensions
 {
@@ -81,6 +82,7 @@ public static class Extensions
     {
         var services = builder.Services;
         var configuration = builder.Configuration;
+        var allowInsecureHttp = InsecureHttpAuthentication.IsAllowed(configuration, builder.Environment);
 
         var identityUrl = configuration["IdentityUrl"]
             ?? configuration["PUBLIC_IDENTITY_URL"]
@@ -97,32 +99,46 @@ public static class Extensions
         {
             options.Cookie.Name = "eshopauth";
 
-            options.Cookie.SameSite = SameSiteMode.Lax;
-
-            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-
             options.LoginPath = "/";
+            if (allowInsecureHttp)
+            {
+                InsecureHttpAuthentication.ConfigureCookie(options);
+            }
+            else
+            {
+                options.Cookie.SameSite = SameSiteMode.Lax;
+            }
         })
-        .AddOpenIdConnect("oidc", options =>
-        {
-            options.Authority = identityUrl;
+       .AddOpenIdConnect("oidc", options =>
+{
+    options.Authority = identityUrl;
 
-            options.RequireHttpsMetadata = false;
+    if (allowInsecureHttp)
+    {
+        InsecureHttpAuthentication.ConfigureOpenIdConnect(options);
+    }
+    else
+    {
+        options.RequireHttpsMetadata = true;
+    }
 
-            options.ClientId = "webapp";
+    options.ClientId = "webapp";
 
-            options.ClientSecret = "secret";
+    options.ClientSecret = "secret";
 
-            options.ResponseType = "code";
+    options.ResponseType = "code";
 
-            options.SaveTokens = true;
+    options.CallbackPath = "/signin-oidc";
+    options.SignedOutCallbackPath = "/signout-callback-oidc";
 
-            options.GetClaimsFromUserInfoEndpoint = true;
+    options.SaveTokens = true;
 
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("offline_access");
-        });
+    options.GetClaimsFromUserInfoEndpoint = true;
+
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+    options.Scope.Add("offline_access");
+});
 
         services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 
