@@ -7,7 +7,6 @@
     - name: Update apt packages
       apt:
         update_cache: yes
-        upgrade: yes
 
     - name: Install required packages
       apt:
@@ -17,6 +16,12 @@
           - curl
           - unzip
         state: present
+
+    - name: Install Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
 
     - name: Start Docker service
       service:
@@ -28,4 +33,27 @@
       user:
         name: ubuntu
         groups: docker
-        append: true
+        append: yes
+
+    - name: Clone project repository
+      git:
+        repo: https://github.com/abdosaad203/DEPI-Final-Project.git
+        dest: /home/ubuntu/Depi-final
+        version: devops
+        force: yes
+
+    - name: Create environment file
+      copy:
+        dest: /home/ubuntu/Depi-final/docker/.env
+        content: |
+          POSTGRES_PASSWORD=postgres
+          PUBLIC_WEBAPP_URL=http://{{ ansible_host }}:5100
+          PUBLIC_IDENTITY_URL=http://{{ ansible_host }}:8081
+          PUBLIC_WEBHOOKS_CLIENT_URL=http://{{ ansible_host }}:5102
+
+    - name: Deploy microservices with Docker Compose
+      shell: |
+        cd /home/ubuntu/Depi-final/docker
+        docker-compose pull
+        docker-compose down
+        docker-compose up -d

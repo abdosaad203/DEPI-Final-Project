@@ -4,20 +4,37 @@
 
   tasks:
 
-    - name: Install k3s
+    - name: Install lightweight Kubernetes (K3s)
       shell: |
         curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_SELINUX_RPM=true sh -
 
-    - name: Wait for k3s service
+    - name: Ensure K3s service is running
       systemd:
         name: k3s
         state: started
         enabled: true
 
-    - name: Check node status
-      shell: sudo k3s kubectl get nodes
+    - name: Create kube config directory
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy kubeconfig
+      copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /home/ubuntu/.kube/config
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Verify Kubernetes installation
+      shell: k3s kubectl get nodes
       register: k3s_nodes
 
-    - name: Show nodes
+    - name: Show Kubernetes nodes
       debug:
         var: k3s_nodes.stdout
