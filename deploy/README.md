@@ -15,6 +15,7 @@ This folder contains container and Kubernetes assets for the [.NET eShop](https:
 
 ### Prerequisites
 
+
 - Docker Engine + Compose v2
 - .NET 10 SDK (to build images locally)
 
